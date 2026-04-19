@@ -16,6 +16,7 @@ def train_model():
     data = data.dropna()
 
     # Feature engineering
+    data = data[data['area'] > 0]
     data['price_per_sqft'] = data['price'] / data['area']
 
     # Log transform target (important for stability)
