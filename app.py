@@ -325,13 +325,16 @@ def load_model():
         with open("model.pkl", "rb") as f:
             return pickle.load(f)
 bundle = load_model()
+if bundle is None:
+    st.error("❌ Model failed to load. Please retrain or check model.pkl")
+    st.stop()
 
 model = bundle['model']
 encoder = bundle['encoder']
 feat_cols = bundle['feature_cols']
 feat_imp = bundle['feature_importance']
-zone_classes = bundle['zone_classes']
 model_r2 = bundle['r2_score']
+zone_classes = bundle.get('zone_classes', ['urban', 'suburban', 'rural', 'luxury'])
 # ══════════════════════════════════════════════════════════════════════════════
 #  DEMAND ENGINE
 # ══════════════════════════════════════════════════════════════════════════════
@@ -595,7 +598,15 @@ if predict_btn:
     features   = pd.DataFrame([[area, bedrooms, bathrooms, location_rating,
                                  age, int(garage), int(pool), zone_enc]],
                                columns=feat_cols)
-    base_price = max(model.predict(features)[0], 0)
+    raw_pred = model.predict(features)[0]
+
+    # Convert back from log scale if used
+    if bundle.get("log_transform", False):
+        base_price = np.expm1(raw_pred)
+    else:
+        base_price = raw_pred
+
+    base_price = max(base_price, 0)
 
     demand_score  = compute_demand(zone, location_rating, area)
     multiplier    = demand_to_multiplier(demand_score)
