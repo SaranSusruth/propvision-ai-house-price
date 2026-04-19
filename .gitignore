@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+
+# Model files
+*.pkl
+*.joblib
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/
+
+# Jupyter (if any)
+.ipynb_checkpoints/
