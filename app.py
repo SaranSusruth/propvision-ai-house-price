@@ -6,6 +6,9 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import time
+import os
+
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  PAGE CONFIG — must be first Streamlit call
@@ -311,24 +314,24 @@ div[data-testid="stButton"] > button:hover {
 # ══════════════════════════════════════════════════════════════════════════════
 #  LOAD MODEL
 # ══════════════════════════════════════════════════════════════════════════════
+
+
 @st.cache_resource
 def load_model():
-    with open("model.pkl", "rb") as f:
-        return pickle.load(f)
-
-@st.cache_data
-def load_data():
-    return pd.read_csv("dataset.csv")
-
+    if not os.path.exists("model.pkl"):
+        from train_model import train_model
+        return train_model()
+    else:
+        with open("model.pkl", "rb") as f:
+            return pickle.load(f)
 bundle = load_model()
-model    = bundle['model']
-encoder  = bundle['encoder']
-feat_cols = bundle['feature_cols']
-feat_imp  = bundle['feature_importance']
-model_r2  = bundle['r2_score']
-zone_classes = bundle['zone_classes']
-df = load_data()
 
+model = bundle['model']
+encoder = bundle['encoder']
+feat_cols = bundle['feature_cols']
+feat_imp = bundle['feature_importance']
+zone_classes = bundle['zone_classes']
+model_r2 = bundle['r2_score']
 # ══════════════════════════════════════════════════════════════════════════════
 #  DEMAND ENGINE
 # ══════════════════════════════════════════════════════════════════════════════
