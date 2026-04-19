@@ -394,6 +394,56 @@ def fmt(usd_val, show_inr, usd_to_inr=83.5):
             return f"₹{inr:,.0f}"
     else:
         return f"${usd_val:,.0f}"
+def generate_ai_insight(area, bedrooms, bathrooms, location_rating,
+                        age, garage, pool, zone,
+                        demand_score, base_price, final_price):
+
+    insights = []
+
+    # ── Price reasoning
+    if final_price > base_price:
+        insights.append("Market demand is pushing the price above the model's base valuation.")
+
+    # ── Location impact
+    if location_rating >= 8:
+        insights.append("The property benefits from a premium location, significantly increasing its value.")
+    elif location_rating <= 4:
+        insights.append("The lower location rating is limiting price growth.")
+
+    # ── Area impact
+    if area > 3000:
+        insights.append("Large property size contributes strongly to higher valuation.")
+    elif area < 1000:
+        insights.append("Smaller area restricts overall property value.")
+
+    # ── Age impact
+    if age <= 5:
+        insights.append("Newer construction increases desirability and price.")
+    elif age > 20:
+        insights.append("Older property age negatively impacts valuation.")
+
+    # ── Amenities
+    if pool:
+        insights.append("Swimming pool adds luxury appeal and boosts price.")
+    if garage >= 2:
+        insights.append("Multiple garage spaces add functional and resale value.")
+
+    # ── Zone impact
+    zone_map = {
+        "luxury": "Luxury zones have high appreciation and strong buyer demand.",
+        "urban": "Urban zones benefit from infrastructure and consistent demand.",
+        "suburban": "Suburban zones offer balanced growth and affordability.",
+        "rural": "Rural zones typically have lower demand and slower appreciation."
+    }
+    insights.append(zone_map.get(zone, ""))
+
+    # ── Demand insight
+    if demand_score >= 0.75:
+        insights.append("The market is currently very competitive for this property type.")
+    elif demand_score < 0.4:
+        insights.append("Demand is relatively low, which may limit short-term gains.")
+
+    return " ".join(insights)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  SIDEBAR — PREMIUM TABBED CONTROL PANEL (UI UPGRADE ONLY)
@@ -614,6 +664,12 @@ if predict_btn:
     yearly_proj, infl_rate = compute_inflation_price(demand_price, zone, years_to_project=10)
 
     d_label, d_color = demand_label(demand_score)
+    
+    ai_explanation = generate_ai_insight(
+        area, bedrooms, bathrooms, location_rating,
+        age, garage, pool, zone,
+        demand_score, base_price, demand_price
+    )
 
     # ── RESULT HERO
     st.markdown('<div class="section-label">Valuation Results</div>', unsafe_allow_html=True)
@@ -664,6 +720,12 @@ if predict_btn:
         valuation is <strong>{fmt(demand_price, show_inr, usd_to_inr)}</strong>. With the zone's annual appreciation
         rate of <strong>{infl_rate*100:.1f}%</strong>, this property is projected to reach
         <strong>{fmt(price_10yr, show_inr, usd_to_inr)}</strong> in 10 years — a <strong>+{roi}% ROI</strong>.
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="insight-box">
+        <strong>🤖 AI Explanation:</strong><br><br>
+        {ai_explanation}
     </div>
     """, unsafe_allow_html=True)
 
