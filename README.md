@@ -1,6 +1,9 @@
 # 🏛️ PropVision AI — House Price Intelligence Platform
 
-> AI-powered real estate valuation with **dynamic demand scoring**, **zone-based market heat**, and **inflation-adjusted price projections**.
+## 🚀 Live Demo  
+👉 https://propvision-ai-house-price.streamlit.app/
+
+An AI-powered real estate valuation platform that predicts house prices using machine learning, enhanced with demand analysis, zone-based market intelligence, and future price projections.
 
 ---
 
@@ -71,3 +74,43 @@ Final Price = AI Base Price × Demand Multiplier
 ---
 
 ## 🏆 Built for Hackathon Excellence
+
+## ⚙️ How to Run Locally
+
+```bash
+git clone https://github.com/SaranSusruth/propvision-ai-house-price.git
+cd propvision-ai-house-price
+pip install -r requirements.txt
+python -m streamlit run app.py
+
+
+---
+
+## 🔹 Add “Model Training” section
+
+```markdown
+## 🧠 Model Training
+
+The trained model file is not stored in the repository to keep it lightweight and reproducible.
+
+To train the model:
+
+```bash
+python train_model.py
+
+
+---
+
+## 🔹 Add Demo Section
+
+```markdown
+## 📸 Demo
+
+![App Screenshot](assets/demo.png)
+
+## 🛠️ Tech Stack
+
+- Python
+- Streamlit
+- Scikit-learn
+- Pandas, NumPy
