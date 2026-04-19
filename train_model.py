@@ -1,17 +1,25 @@
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-import pickle
+from xgboost import XGBRegressor
 
 def train_model():
     # ─────────────────────────────────────────────
     # Load & Prepare Data
     # ─────────────────────────────────────────────
-    data = pd.read_csv("dataset.csv")
+    data = pd.read_csv("data/real_estate.csv")
+    # ─────────────────────────────────────────────
+    # Data Cleaning & Feature Engineering
+    # ─────────────────────────────────────────────
+
+    # Remove missing values
+    data = data.dropna()
+
+    # Feature engineering
+    data['price_per_sqft'] = data['price'] / data['area']
+
+    # Log transform target (important for stability)
+    data['price'] = np.log1p(data['price'])
 
     le = LabelEncoder()
     data['zone_encoded'] = le.fit_transform(data['zone'])
@@ -29,45 +37,38 @@ def train_model():
     # ─────────────────────────────────────────────
     # Train Models
     # ─────────────────────────────────────────────
-    rf_model = RandomForestRegressor(n_estimators=200, max_depth=10, random_state=42)
-    rf_model.fit(X_train, y_train)
+    model = XGBRegressor(
+    n_estimators=300,
+    learning_rate=0.05,
+    max_depth=8,
+    random_state=42
+    )
 
-    gb_model = GradientBoostingRegressor(n_estimators=150, learning_rate=0.1, random_state=42)
-    gb_model.fit(X_train, y_train)
+    model.fit(X_train, y_train)
 
-    lr_model = LinearRegression()
-    lr_model.fit(X_train, y_train)
-
-    # ─────────────────────────────────────────────
     # Evaluate
     # ─────────────────────────────────────────────
-    rf_r2 = r2_score(y_test, rf_model.predict(X_test))
+    r2 = r2_score(y_test, model.predict(X_test))
+    print(f"XGBoost R² = {r2:.4f}")
 
     # ─────────────────────────────────────────────
     # Save Model Bundle
     # ─────────────────────────────────────────────
-    best_model = rf_model
-
-    feature_importance = dict(zip(feature_cols, best_model.feature_importances_))
-
     model_bundle = {
-        'model': best_model,
-        'encoder': le,
-        'feature_cols': feature_cols,
-        'feature_importance': feature_importance,
-        'model_name': 'Random Forest',
-        'r2_score': rf_r2,
-        'training_rows': len(data),
-        'zone_classes': list(le.classes_)
-    }
-
+    'model': model,
+    'encoder': le,
+    'feature_cols': feature_cols,
+    'feature_importance': dict(zip(feature_cols, model.feature_importances_)),
+    'model_name': 'XGBoost',
+    'r2_score': r2,
+    'training_rows': len(data),
+    'zone_classes': list(le.classes_),
+    'log_transform': True   # IMPORTANT
+}
     # Save model
-    with open("model.pkl", "wb") as f:
-        pickle.dump(model_bundle, f)
-
-    return model_bundle
+    pickle.dump(model_bundle, open("model.pkl", "wb"))
 
 
-# Optional: allow standalone execution
-if __name__ == "__main__":
-    train_model()
+    # Optional: allow standalone execution
+    if __name__ == "__main__":
+        train_model()
