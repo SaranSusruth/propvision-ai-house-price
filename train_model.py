@@ -15,7 +15,7 @@ def train_model():
     # ─────────────────────────────────────────────
     # Data Cleaning & Feature Engineering
     # ─────────────────────────────────────────────
-
+    data = pd.read_csv("dataset_v2.csv")
     # Remove missing values
     data = data.dropna()
     # Add slight randomness (makes data look more realistic)
