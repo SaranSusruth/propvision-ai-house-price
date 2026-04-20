@@ -11,7 +11,7 @@ def train_model():
     # ─────────────────────────────────────────────
     # Load & Prepare Data
     # ─────────────────────────────────────────────
-    data = pd.read_csv("dataset.csv")
+    df = pd.read_csv("dataset_v2.csv")
     # ─────────────────────────────────────────────
     # Data Cleaning & Feature Engineering
     # ─────────────────────────────────────────────
@@ -81,8 +81,8 @@ def train_model():
     'zone_classes': list(le.classes_),
     'log_transform': True   # IMPORTANT
 }
-    # Save model
     pickle.dump(model_bundle, open("model.pkl", "wb"))
+    return model_bundle
 
 
     # Optional: allow standalone execution
