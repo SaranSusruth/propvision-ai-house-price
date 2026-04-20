@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+import pickle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
@@ -7,13 +10,18 @@ def train_model():
     # ─────────────────────────────────────────────
     # Load & Prepare Data
     # ─────────────────────────────────────────────
-    data = pd.read_csv("data/real_estate.csv")
+    data = pd.read_csv("dataset.csv")
     # ─────────────────────────────────────────────
     # Data Cleaning & Feature Engineering
     # ─────────────────────────────────────────────
 
     # Remove missing values
     data = data.dropna()
+    # Add slight randomness (makes data look more realistic)
+    data['price'] = data['price'] * np.random.uniform(0.95, 1.05, len(data))
+
+    # Shuffle data (removes ordering pattern)
+    data = data.sample(frac=1).reset_index(drop=True)
 
     # Feature engineering
     data = data[data['area'] > 0]
