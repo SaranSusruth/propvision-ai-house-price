@@ -91,7 +91,7 @@ python train_model.py
 
 ### 4. Run the application
 ```bash
-streamlit run app.py
+python -m streamlit run app.py
 ```
 
 Open in browser: **http://localhost:8501**
