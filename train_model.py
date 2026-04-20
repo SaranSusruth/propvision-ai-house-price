@@ -5,6 +5,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from xgboost import XGBRegressor
+from sklearn.metrics import mean_absolute_error
 
 def train_model():
     # ─────────────────────────────────────────────
@@ -25,8 +26,7 @@ def train_model():
 
     # Feature engineering
     data = data[data['area'] > 0]
-    data['price_per_sqft'] = data['price'] / data['area']
-
+    
     # Log transform target (important for stability)
     data['price'] = np.log1p(data['price'])
 
@@ -49,7 +49,8 @@ def train_model():
     model = XGBRegressor(
     n_estimators=300,
     learning_rate=0.05,
-    max_depth=8,
+    max_depth=4,
+    n_jobs=-1,
     random_state=42
     )
 
@@ -57,8 +58,14 @@ def train_model():
 
     # Evaluate
     # ─────────────────────────────────────────────
-    r2 = r2_score(y_test, model.predict(X_test))
-    print(f"XGBoost R² = {r2:.4f}")
+    y_pred = model.predict(X_test)
+
+    r2 = r2_score(y_test, y_pred)
+    mae = mean_absolute_error(y_test, y_pred)
+
+    print(f"Model Performance:")
+    print(f"R² Score: {r2:.4f}")
+    print(f"MAE: {mae:.4f}")
 
     # ─────────────────────────────────────────────
     # Save Model Bundle
