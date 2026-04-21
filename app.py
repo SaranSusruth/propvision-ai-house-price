@@ -1,21 +1,3 @@
-"""
-PropVision AI — app.py
-======================
-Run after training:   streamlit run app.py
-
-ALL bugs fixed:
-  [B1] area_scaled uses bundle["area_max"] — not hardcoded 10000
-  [B2] get_zone_comparison_prices builds the full 10-column feature vector
-  [B3] safe_predict() handles log-transform in exactly one place
-  [B4] st.stop() only fires when bundle is None
-  [B5] Division-by-zero protected via safe_pct()
-  [B6] Currency symbol flows into every Plotly axis & hover
-  [B7] market_sensitivity wired into multiplier
-  [B8] Zone encoder fallback chain — never crashes on unseen zone
-  [B9] Feature importance key map covers all column name variants
-  [B10] Gauge steps aligned with demand_label thresholds
-"""
-
 import streamlit as st
 import pickle
 import pandas as pd
