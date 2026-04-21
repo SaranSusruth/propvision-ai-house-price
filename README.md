@@ -176,21 +176,4 @@ propvision-ai/
 **Saran Susruth Manthri Pragada**
 
 
----
 
-## 📝 Version & License
-
-- **Current Version:** v4.0-propvision
-- **License:** MIT
-
----
-
-## 💻 Git Commands for Update
-
-To add and commit the updated README file to your GitHub repository, use the following commands:
-
-```bash
-git add README.md
-git commit -m "docs: Update README to reflect latest app.py logic, UI, and features. Professional alignment with optimized code."
-git push
-```
