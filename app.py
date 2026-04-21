@@ -1,20 +1,3 @@
-"""
-PropVision AI — app.py
-======================
-Run after training:   streamlit run app.py
-
-ALL bugs fixed:
-  [B1] area_scaled uses bundle["area_max"] — not hardcoded 10000
-  [B2] get_zone_comparison_prices builds the full 10-column feature vector
-  [B3] safe_predict() handles log-transform in exactly one place
-  [B4] st.stop() only fires when bundle is None
-  [B5] Division-by-zero protected via safe_pct()
-  [B6] Currency symbol flows into every Plotly axis & hover
-  [B7] market_sensitivity wired into multiplier
-  [B8] Zone encoder fallback chain — never crashes on unseen zone
-  [B9] Feature importance key map covers all column name variants
-  [B10] Gauge steps aligned with demand_label thresholds
-"""
 
 import streamlit as st
 import pickle
@@ -1268,14 +1251,13 @@ if predict_btn:
         ]
     })
     st.dataframe(
-            summary.style.apply(
-                lambda x: [
-                    "background-color:rgba(30,45,64,0.18); font-weight:bold; color:#fbbf24;" if x.iloc[i] == "" else
-                    "background-color:rgba(17,24,39,0.85);" for i in range(len(x))
-                ], axis=0
-            ).set_properties(**{"color":"#e2e8f0","border-color":"#1a2535"}),
-            use_container_width=True, hide_index=True, height=680
-        )
+        summary.style.apply(
+            lambda x: ["background-color:rgba(59,130,246,0.08)" if i >= 9 else
+                       "background-color:rgba(30,45,64,0.3)" if x.iloc[i] == "" else ""
+                       for i in range(len(x))], axis=0
+        ).set_properties(**{"color":"#e2e8f0","border-color":"#1a2535"}),
+        use_container_width=True, hide_index=True, height=680
+    )
 
 else:
     # ── PLACEHOLDER ───────────────────────────────────────────────
