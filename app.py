@@ -499,6 +499,67 @@ def safe_predict(features_df: pd.DataFrame) -> float:
     return max(float(np.expm1(raw)) if use_log else raw, 0.0)
 
 
+def compute_local_feature_impacts(area, bedrooms, bathrooms, location_rating,
+                                  age, garage, pool, zone):
+    """Estimate listing-level driver importance for the current input."""
+    base_df = build_features(area, bedrooms, bathrooms, location_rating,
+                             age, garage, pool, safe_encode(zone))
+    base_price = safe_predict(base_df)
+
+    def delta_value(val, change, minimum, maximum):
+        alt = val + change
+        if alt < minimum:
+            alt = val - change
+        if alt > maximum:
+            alt = val - change
+        return max(min(alt, maximum), minimum)
+
+    alt_area = delta_value(area, max(100, int(area * 0.1)), 500, 5000)
+    alt_bedrooms = delta_value(bedrooms, 1, 1, 8)
+    alt_bathrooms = delta_value(bathrooms, 1, 1, 6)
+    alt_location = delta_value(location_rating, 1, 1, 10)
+    alt_age = delta_value(age, -2, 0, 35)
+    alt_garage = delta_value(garage, 1, 0, 3)
+    alt_pool = 1 if pool == 0 else 0
+
+    zone_prices = get_zone_comparison(area, bedrooms, bathrooms,
+                                     location_rating, age, garage, pool)[1]
+    current_zone_price = zone_prices["rural suburban urban luxury".split().index(zone)]
+    zone_diff = abs(current_zone_price - np.mean([p for z, p in zip(["rural","suburban","urban","luxury"], zone_prices) if z != zone]))
+
+    raw_impacts = {
+        "Property Area": abs(safe_predict(build_features(alt_area, bedrooms, bathrooms,
+                                                          location_rating, age, garage, pool,
+                                                          safe_encode(zone))) - base_price),
+        "Bedrooms": abs(safe_predict(build_features(area, alt_bedrooms, bathrooms,
+                                                     location_rating, age, garage, pool,
+                                                     safe_encode(zone))) - base_price),
+        "Bathrooms": abs(safe_predict(build_features(area, bedrooms, alt_bathrooms,
+                                                      location_rating, age, garage, pool,
+                                                      safe_encode(zone))) - base_price),
+        "Location Quality": abs(safe_predict(build_features(area, bedrooms, bathrooms,
+                                                            alt_location, age, garage, pool,
+                                                            safe_encode(zone))) - base_price),
+        "Property Age": abs(safe_predict(build_features(area, bedrooms, bathrooms,
+                                                         location_rating, alt_age, garage, pool,
+                                                         safe_encode(zone))) - base_price),
+        "Garage Spaces": abs(safe_predict(build_features(area, bedrooms, bathrooms,
+                                                           location_rating, age, alt_garage, pool,
+                                                           safe_encode(zone))) - base_price),
+        "Swimming Pool": abs(safe_predict(build_features(area, bedrooms, bathrooms,
+                                                            location_rating, age, garage, alt_pool,
+                                                            safe_encode(zone))) - base_price),
+        "Zone Type": zone_diff,
+    }
+
+    total = sum(raw_impacts.values()) or 1.0
+    sorted_impacts = sorted(raw_impacts.items(), key=lambda x: -x[1])
+    return [
+        (name, round(value / total * 100, 1), value)
+        for name, value in sorted_impacts
+    ]
+
+
 def safe_pct(num: float, den: float) -> float:
     """[B5] Division-by-zero guard."""
     return (num / den * 100) if den > 0 else 0.0
@@ -1088,6 +1149,11 @@ if predict_btn:
             <strong>{safe_pct(contribs["Area Size Factor"],demand_score):.0f}%</strong>.
             Total demand score: <strong>{int(demand_score*100)}%</strong> →
             price premium of <strong>{fmt(demand_price-base_price,show_inr)}</strong>.
+        </div>
+        <div class="insight-box">
+            <strong>📊 Market Reality:</strong> Higher-quality location and larger
+            area still drive most demand premiums, while smaller rural properties
+            earn less of the price boost from buyer competition.
         </div>""", unsafe_allow_html=True)
 
     # ── TAB C: ZONE COMPARISON ────────────────────────────────────
@@ -1150,28 +1216,23 @@ if predict_btn:
         )
         st.plotly_chart(fig4, use_container_width=True)
 
+        st.markdown(f"""
+        <div class="insight-box">
+            <strong>🏘️ Real-World Zone Insight:</strong>
+            Your property specs are held constant while the zone shifts.
+            This highlights how the same home would trade very differently in rural,
+            suburban, urban, and luxury markets — with demand and inflation
+            premiums driving the gap.
+        </div>""", unsafe_allow_html=True)
+
     # ── TAB D: FEATURE IMPORTANCE ─────────────────────────────────
     with tab_d:
-        # [B9] Exhaustive name map — covers all training column variants
-        feat_name_map = {
-            "area_scaled"     : "Property Area",
-            "area"            : "Property Area",
-            "bedrooms"        : "Bedrooms",
-            "bathrooms"       : "Bathrooms",
-            "location_rating" : "Location Rating",
-            "age"             : "Property Age",
-            "garage"          : "Garage Spaces",
-            "pool"            : "Swimming Pool",
-            "zone_encoded"    : "Zone Type",
-            "zone_enc"        : "Zone Type",
-            "zone"            : "Zone Type",
-            "bed_bath_ratio"  : "Bed/Bath Ratio",
-            "luxury_score"    : "Luxury Score",
-        }
-        sorted_fi = sorted(feat_imp.items(), key=lambda x: -x[1])
-        fi_names  = [feat_name_map.get(k, k.replace("_"," ").title())
-                     for k, _ in sorted_fi]
-        fi_vals   = [v * 100 for _, v in sorted_fi]
+        local_impacts = compute_local_feature_impacts(
+            area, bedrooms, bathrooms, location_rating,
+            age, garage, pool, zone
+        )
+        fi_names  = [name for name, _, _ in local_impacts]
+        fi_vals   = [value for _, value, _ in local_impacts]
 
         if fi_vals:
             fig5 = go.Figure(go.Bar(
@@ -1184,33 +1245,48 @@ if predict_btn:
                 text=[f"{v:.1f}%" for v in fi_vals],
                 textposition="outside",
                 textfont=dict(color="#64748b", size=11),
-                hovertemplate="<b>%{y}</b><br>Importance: %{x:.1f}%<extra></extra>"
+                hovertemplate="<b>%{y}</b><br>Estimate: %{x:.1f}% of local driver weight<extra></extra>"
             ))
             fig5.update_layout(
                 paper_bgcolor=PLOT_BG, plot_bgcolor=PLOT_BG,
                 font=dict(family="DM Sans", color="#64748b"),
                 xaxis=dict(gridcolor=GRID_COL, ticksuffix="%",
-                           range=[0, max(fi_vals)*1.28]),
+                           range=[0, max(fi_vals) * 1.28]),
                 yaxis=dict(gridcolor="rgba(0,0,0,0)", autorange="reversed"),
                 margin=dict(l=10, r=80, t=15, b=10), height=340, showlegend=False
             )
             st.plotly_chart(fig5, use_container_width=True)
 
+            top_name, top_pct, top_delta = local_impacts[0]
+            bottom_name, bottom_pct, bottom_delta = local_impacts[-1]
+
             fi1, fi2 = st.columns(2)
             with fi1:
                 st.markdown(f"""
                 <div class="insight-box success">
-                    <strong>🏆 Top Driver:</strong> <strong>{fi_names[0]}</strong>
-                    accounts for <strong>{fi_vals[0]:.1f}%</strong> of the model's
-                    pricing decisions.
+                    <strong>🏆 Local Pricing Driver:</strong>
+                    <strong>{top_name}</strong> is the strongest current influence,
+                    estimated to drive <strong>{top_pct:.1f}%</strong> of how
+                    this listing prices relative to nearby alternatives.
+                    That equates to about <strong>{fmt(top_delta, show_inr)}</strong>
+                    in valuation swing.
                 </div>""", unsafe_allow_html=True)
             with fi2:
                 st.markdown(f"""
                 <div class="insight-box">
-                    <strong>ℹ️ Least Influential:</strong>
-                    <strong>{fi_names[-1]}</strong> has the smallest direct impact
-                    at <strong>{fi_vals[-1]:.1f}%</strong>.
+                    <strong>🔎 Least Impactful Factor:</strong>
+                    <strong>{bottom_name}</strong> is the smallest direct driver for
+                    this configuration, with only about <strong>{bottom_pct:.1f}%</strong>
+                    influence and <strong>{fmt(bottom_delta, show_inr)}</strong> price effect.
                 </div>""", unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="insight-box">
+                <strong>📌 Note:</strong> This view is a local, listing-level driver
+                analysis. It adjusts with the current property profile, so the most
+                important feature can change if you update the area, zone, age,
+                or amenities.
+            </div>""", unsafe_allow_html=True)
         else:
             st.info("Feature importance data not available.")
 
