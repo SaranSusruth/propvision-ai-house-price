@@ -26,7 +26,7 @@ This project aims to provide a **data-driven, consistent, and explainable pricin
 | 🔥 Demand Engine       | Real-time demand scoring based on zone, location quality, and area size |
 | 📈 Price Projection    | 10-year, inflation-adjusted price forecasting by zone |
 | 🏘️ Zone Comparison     | Side-by-side Rural / Suburban / Urban / Luxury market analysis |
-| 🔬 Explainability      | Feature importance breakdown and AI-driven property insights |
+| 🔬 Explainability      | Dynamic local feature importance with AI-driven property insights |
 | 💎 Premium UI/UX       | Modern Streamlit interface with custom CSS, interactive charts, and responsive design |
 | 🛡️ Robustness          | Defensive coding for missing data, unseen zones, and edge cases |
 | 📊 Live Market Snapshot| Always-on dashboard with demand, inflation, and growth metrics |
@@ -49,6 +49,9 @@ This project aims to provide a **data-driven, consistent, and explainable pricin
   - Zone (encoded)
   - Bed/Bath Ratio
   - Luxury Score
+- **Explainability:**
+  - Global model importance for training
+  - Input-sensitive, listing-level driver analysis in the app
 - **Robustness:**
   - Handles missing model.pkl (auto-trains if missing)
   - Safe encoding for unseen zones
@@ -123,7 +126,6 @@ propvision-ai/
 ├── dataset.csv      # Synthetic dataset
 ├── model.pkl        # Trained model (auto-generated)
 ├── requirements.txt # Python dependencies
-├── assets/          # Images, screenshots, and static assets
 └── README.md        # Documentation
 ```
 
@@ -131,7 +133,7 @@ propvision-ai/
 
 ## 📸 Demo
 
-![App Screenshot](assets/demo.png)
+_Screenshot not included in this repository._
 
 ---
 
